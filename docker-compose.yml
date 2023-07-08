@@ -6,6 +6,9 @@ services:
     container_name: zookeeper
     ports:
       - "2181:2181"
+    networks:
+      - kafka-net
+
   kafka:
     image: wurstmeister/kafka
     container_name: kafka
@@ -14,6 +17,11 @@ services:
     environment:
       KAFKA_ADVERTISED_HOST_NAME: localhost
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    restart: unless-stopped
+    networks:
+      - kafka-net
+    depends_on:
+      - zookeeper
 
   mongo:
     container_name: mongo
@@ -22,36 +30,9 @@ services:
       - 27017:27017
     volumes:
       - .data/mongo:/data/db
+    networks:
+      - kafka-net
   
-  app1:
-    container_name: app1
-    build: 
-      context: ./app1/
-      dockerfile: Dockerfile
-    ports:
-      - 4000:4000
-    volumes:
-      - ./app1:/app
-    environment:
-      - PORT=4000
-      - MONGO_URL=mongodb://mongo:27017/app1
-    depends_on:
-      - mongo
-      - kafka
-  
-  app2:
-    container_name: app2
-    build: 
-      context: ./app2/
-      dockerfile: Dockerfile
-    ports:
-      - 4001:4001
-    volumes:
-      - ./app2:/app
-    environment:
-      - PORT=4001
-      - MONGO_URL=mongodb://mongo:27017/app2
-    depends_on:
-      - mongo
-      - kafka
-
+networks:
+  kafka-net:
+    external: true
