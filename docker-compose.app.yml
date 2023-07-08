@@ -13,9 +13,9 @@ services:
     environment:
       - PORT=4000
       - MONGO_URL=mongodb://mongo:27017/app1
-      # - KAFKA_SERVER=
+      - KAFKA_BROKER=kafka:9092
     networks:
-      - kafka-net
+      - kafka-network
     
   # app2:
   #   container_name: app2
@@ -31,5 +31,6 @@ services:
   #     - MONGO_URL=mongodb://mongo:27017/app2
 
 networks:
-  kafka-net:
-    external: true
+  kafka-network:
+    external:
+      name: kafka-app_kafka-network

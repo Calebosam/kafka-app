@@ -1,6 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const { Kafka } = require("kafkajs");
+const { Kafka, Partitioners } = require("kafkajs");
+const dotenv = require("dotenv");
+dotenv.config();
+
 const app = express();
 
 app.use(express.json());
@@ -21,46 +24,50 @@ const dbConfig = async () => {
     })
     .catch((err) => console.log(err));
 };
+dbConfig();
 
 const kafka = new Kafka({
   clientId: "my-app",
-  brokers: ["kafka:9092"],
+  brokers: [process.env.KAFKA_BROKER],
 });
 
-const producer = kafka.producer();
-const consumer = kafka.consumer({ groupId: "test-group" });
+const producer = kafka.producer({
+  createPartitioner: Partitioners.LegacyPartitioner,
+});
 
-const run = async () => {
-  // Producing
+const runProducer = async (topic, message) => {
   await producer.connect();
   await producer.send({
-    topic: "test-topic",
-    messages: [{ value: "Hello KafkaJS user!" }],
+    topic: topic,
+    messages: [{ value: JSON.stringify(message) }],
   });
-
-  // Consuming
-  await consumer.connect();
-  await consumer.subscribe({ topic: "test-topic", fromBeginning: true });
-
-  await consumer.run({
-    eachMessage: async ({ topic, partition, message }) => {
-      console.log({
-        partition,
-        offset: message.offset,
-        value: message.value.toString(),
-      });
-    },
-  });
+  await producer.disconnect();
 };
-
-const dbsRunning = async () => {
-  await dbConfig();
-};
-run().catch(console.error);
-// setTimeout(dbsRunning, 1000);
 
 app.get("/", (req, res, next) => {
   res.json({ status: "success", message: "App1 is working" });
+});
+app.get("/users", async (req, res, next) => {
+  const users = await User.find({});
+  res.json({ status: "success", users });
+});
+
+app.post("/users", async (req, res, next) => {
+  const user = await User.create(req.body);
+
+  const run = async () => {
+    await runProducer("create-user", user);
+  };
+
+  run()
+    .then(() => {
+      console.log("User Created");
+      res.json({ status: "success", user });
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      res.json({ status: "fail", message: error });
+    });
 });
 
 app.listen(process.env.PORT, () => {

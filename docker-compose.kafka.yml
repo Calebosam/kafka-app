@@ -25,6 +25,16 @@ services:
     networks:
       - kafka-network
 
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - .data/mongo:/data/db
+    networks:
+      - kafka-network
+
 networks:
   kafka-network:
     driver: bridge
