@@ -1,5 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const { Kafka, Partitioners } = require("kafkajs");
+const dotenv = require("dotenv");
+dotenv.config();
+
 const app = express();
 
 app.use(express.json());
@@ -21,14 +25,37 @@ const dbConfig = async () => {
     .catch((err) => console.log(err));
 };
 
-const dbsRunning = async () => {
-  await dbConfig();
-};
+dbConfig();
 
-setTimeout(dbsRunning, 10000);
+const kafka = new Kafka({
+  clientId: "my-app",
+  brokers: [process.env.KAFKA_BROKER],
+});
+const consumer = kafka.consumer({ groupId: "my-group" });
+
+// const runConsumer = async () => {
+//   await consumer.connect();
+//   await consumer.subscribe({ topic: "create-user", fromBeginning: true });
+
+//   await consumer.run({
+//     eachMessage: async ({ topic, partition, message }) => {
+//       console.log({
+//         topic,
+//         partition,
+//         offset: message.offset,
+//         value: message.value.toString(),
+//       });
+//     },
+//   });
+// };
 
 app.get("/", (req, res, next) => {
   res.json({ status: "success", message: "App2 is working" });
+});
+
+app.get("/users", async (req, res, next) => {
+  const users = await User.find({});
+  res.json({ status: "success", users });
 });
 
 app.listen(process.env.PORT, () => {

@@ -17,18 +17,21 @@ services:
     networks:
       - kafka-network
     
-  # app2:
-  #   container_name: app2
-  #   build: 
-  #     context: ./app2/
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "4001:4001"
-  #   volumes:
-  #     - ./app2:/app
-  #   environment:
-  #     - PORT=4001
-  #     - MONGO_URL=mongodb://mongo:27017/app2
+  app2:
+    container_name: app2
+    build: 
+      context: ./app2/
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./app2:/app
+    environment:
+      - PORT=4001
+      - MONGO_URL=mongodb://mongo:27017/app2
+      - KAFKA_BROKER=kafka:9092
+    networks:
+      - kafka-network
 
 networks:
   kafka-network:
